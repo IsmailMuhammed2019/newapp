@@ -1,0 +1,22 @@
+# Development Dockerfile for NestJS Backend
+FROM node:18-alpine
+
+# Install curl for health checks
+RUN apk add --no-cache curl
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy source code
+COPY . .
+
+# Expose ports
+EXPOSE 3001 9229
+
+# Start development server with debugging
+CMD ["npm", "run", "start:dev"] 

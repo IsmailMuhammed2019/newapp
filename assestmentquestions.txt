@@ -1,0 +1,62 @@
+const technicalQuestions: Question[] = [
+  {
+    id: 1,
+    question: "What is the primary purpose of version control systems like Git?",
+    options: [
+      "To store passwords securely",
+      "To track changes in code and collaborate with others",
+      "To compress files for storage",
+      "To encrypt sensitive data"
+    ],
+    correctAnswer: 1,
+    category: 'technical'
+  },
+  {
+    id: 2,
+    question: "Which of the following is NOT a programming paradigm?",
+    options: [
+      "Object-Oriented Programming",
+      "Functional Programming",
+      "Procedural Programming",
+      "Linear Programming"
+    ],
+    correctAnswer: 3,
+    category: 'technical'
+  },
+  {
+    id: 3,
+    question: "What does API stand for in software development?",
+    options: [
+      "Application Programming Interface",
+      "Advanced Programming Integration",
+      "Automated Program Interface",
+      "Application Process Integration"
+    ],
+    correctAnswer: 0,
+    category: 'technical'
+  },
+  {
+    id: 4,
+    question: "Which data structure operates on a LIFO basis?",
+    options: [
+      "Queue",
+      "Stack",
+      "Linked List",
+      "Tree"
+    ],
+    correctAnswer: 1,
+    category: 'technical'
+  },
+  {
+    id: 5,
+    question: "What is the main advantage of using a database over a file system?",
+    options: [
+      "Faster file access",
+      "Better data organization and querying capabilities",
+      "Smaller storage requirements",
+      "Easier backup procedures"
+    ],
+    correctAnswer: 1,
+    category: 'technical'
+  }
+]
