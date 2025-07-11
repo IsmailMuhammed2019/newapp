@@ -2,7 +2,9 @@ import { useRegistrationStore } from '@/store/registration';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Award, Calendar, FileText } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Award, Calendar, FileText, X, Image as ImageIcon } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 const nyscStatusOptions = [
   { value: 'completed', label: 'Completed NYSC' },
@@ -12,14 +14,61 @@ const nyscStatusOptions = [
 ];
 
 export default function NYSCStep() {
-  const { formData, setFormData } = useRegistrationStore();
+  const { formData, fileData, setFormData, setFileData } = useRegistrationStore();
+  const [nyscPreviewUrl, setNyscPreviewUrl] = useState<string | null>(null);
+
+  // Restore preview URL when component mounts
+  useEffect(() => {
+    if (fileData.nyscDocument.length > 0) {
+      const file = fileData.nyscDocument[0];
+      if (file && file.type.startsWith('image/')) {
+        const url = URL.createObjectURL(file);
+        setNyscPreviewUrl(url);
+      }
+    }
+  }, [fileData.nyscDocument]);
+
+  // Cleanup preview URL when component unmounts
+  useEffect(() => {
+    return () => {
+      if (nyscPreviewUrl) {
+        URL.revokeObjectURL(nyscPreviewUrl);
+      }
+    };
+  }, [nyscPreviewUrl]);
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData({ [field]: value });
   };
 
-  const handleFileChange = (field: keyof typeof formData, files: File[]) => {
-    setFormData({ [field]: files });
+  const handleFileChange = (field: keyof typeof fileData, files: File[]) => {
+    setFileData({ [field]: files });
+    
+    // Create preview URL for image files
+    if (field === 'nyscDocument' && files.length > 0) {
+      const file = files[0];
+      if (file.type.startsWith('image/')) {
+        const url = URL.createObjectURL(file);
+        setNyscPreviewUrl(url);
+      } else {
+        setNyscPreviewUrl(null);
+      }
+    } else {
+      setNyscPreviewUrl(null);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setFileData({ nyscDocument: [] });
+    setNyscPreviewUrl(null);
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   return (
@@ -91,6 +140,70 @@ export default function NYSCStep() {
               Upload your {formData.nyscStatus === 'completed' ? 'NYSC certificate' : 'exemption letter'} document (single file only)
             </p>
           </div>
+
+          {/* NYSC Document Preview */}
+          {fileData.nyscDocument.length > 0 && (
+            <div className="mt-4 p-4 bg-white border border-gray-200 rounded-lg">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-medium text-gray-900">Uploaded Document</h4>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRemoveFile}
+                  className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <X className="w-4 h-4 mr-1" />
+                  Remove
+                </Button>
+              </div>
+              
+              <div className="space-y-4">
+                {/* Image Preview */}
+                {nyscPreviewUrl ? (
+                  <div className="flex justify-center">
+                    <div className="relative">
+                      <img
+                        src={nyscPreviewUrl}
+                        alt="Document preview"
+                        className="max-w-full h-auto max-h-80 object-contain rounded-lg border border-gray-200 shadow-sm"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex justify-center">
+                    <div className="w-48 h-48 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
+                      <FileText className="w-16 h-16 text-gray-400" />
+                    </div>
+                  </div>
+                )}
+                
+                {/* File Information */}
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="flex items-center space-x-2 mb-2">
+                    {nyscPreviewUrl ? (
+                      <ImageIcon className="w-5 h-5 text-blue-500" />
+                    ) : (
+                      <FileText className="w-5 h-5 text-gray-500" />
+                    )}
+                    <span className="text-sm font-medium text-gray-900 truncate">
+                      {fileData.nyscDocument[0]?.name}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-xs text-gray-500">
+                    <div>
+                      <span className="font-medium">Size:</span> {formatFileSize(fileData.nyscDocument[0]?.size || 0)}
+                    </div>
+                    <div>
+                      <span className="font-medium">Type:</span> {fileData.nyscDocument[0]?.type || 'Unknown'}
+                    </div>
+                  </div>
+                  <p className="text-xs text-green-600 font-medium mt-2">
+                    ✓ Document uploaded successfully
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

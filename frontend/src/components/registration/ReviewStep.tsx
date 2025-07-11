@@ -9,7 +9,8 @@ import {
   Laptop, 
   Shield, 
   CreditCard,
-  FileText
+  FileText,
+  Clock
 } from 'lucide-react';
 
 // Helper functions to get display values
@@ -62,8 +63,32 @@ const getVerificationModeLabel = (value: string) => {
   return options[value as keyof typeof options] || value;
 };
 
+const getClassTimeLabel = (value: string) => {
+  const options = {
+    morning: 'Morning (8:00 AM - 12:00 PM)',
+    afternoon: 'Afternoon (1:00 PM - 5:00 PM)',
+    evening: 'Evening (6:00 PM - 10:00 PM)',
+    weekend: 'Weekend (Saturday & Sunday)',
+    flexible: 'Flexible Schedule'
+  };
+  return options[value as keyof typeof options] || value;
+};
+
+const getProgramName = (programId: string) => {
+  const programs = [
+    { id: 1, name: 'Cybersecurity Fundamentals' },
+    { id: 2, name: 'Data Protection & Privacy' },
+    { id: 3, name: 'AI & Machine Learning' },
+    { id: 4, name: 'Network Security Essentials' },
+    { id: 5, name: 'Digital Forensics' },
+    { id: 6, name: 'Cloud Security Architecture' }
+  ];
+  const program = programs.find(p => p.id === parseInt(programId));
+  return program?.name || programId;
+};
+
 export default function ReviewStep() {
-  const { formData } = useRegistrationStore();
+  const { formData, fileData } = useRegistrationStore();
 
   return (
     <div className="space-y-6">
@@ -111,7 +136,7 @@ export default function ReviewStep() {
             <div><strong>Institution:</strong> {formData.institution}</div>
             <div><strong>Graduation Year:</strong> {formData.graduationYear}</div>
             <div><strong>Field of Study:</strong> {formData.fieldOfStudy}</div>
-            <div><strong>Documents:</strong> {formData.educationalDocuments.length} file(s)</div>
+            <div><strong>Documents:</strong> {fileData.educationalDocuments.length} file(s)</div>
             {formData.otherQualifications.length > 0 && (
               <div><strong>Other Qualifications:</strong> {formData.otherQualifications.length} qualification(s)</div>
             )}
@@ -131,7 +156,7 @@ export default function ReviewStep() {
             {(formData.nyscStatus === 'completed' || formData.nyscStatus === 'exempted') && (
               <>
                 <div><strong>Number:</strong> {formData.nyscNumber}</div>
-                <div><strong>Document:</strong> {formData.nyscDocument.length} file(s)</div>
+                <div><strong>Document:</strong> {fileData.nyscDocument.length} file(s)</div>
               </>
             )}
           </CardContent>
@@ -146,7 +171,20 @@ export default function ReviewStep() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
-            <div><strong>Program:</strong> {formData.selectedProgram}</div>
+            <div><strong>Program:</strong> {getProgramName(formData.selectedProgram)}</div>
+          </CardContent>
+        </Card>
+
+        {/* Class Schedule Preference */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center space-x-2">
+              <Clock className="h-5 w-5" />
+              <span>Class Schedule Preference</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <div><strong>Preferred Time:</strong> {getClassTimeLabel(formData.classTimePreference)}</div>
           </CardContent>
         </Card>
 
@@ -165,6 +203,36 @@ export default function ReviewStep() {
           </CardContent>
         </Card>
 
+        {/* Payment Information */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center space-x-2">
+              <CreditCard className="h-5 w-5" />
+              <span>Payment Information</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <div><strong>Payment Method:</strong> {formData.hasSocialRegistration === 'yes' ? 'Social Registration' : 'Application Fee Payment'}</div>
+            {formData.hasSocialRegistration === 'yes' && (
+              <div><strong>Social Registration Number:</strong> {formData.socialRegistrationNumber}</div>
+            )}
+            {formData.hasSocialRegistration === 'no' && (
+              <>
+                <div><strong>Payment Status:</strong> {formData.paymentStatus || 'Not initiated'}</div>
+                {formData.paymentReference && (
+                  <div><strong>Payment Reference:</strong> <span className="font-mono text-blue-600">{formData.paymentReference}</span></div>
+                )}
+                {formData.paymentDate && (
+                  <div><strong>Payment Date:</strong> {new Date(formData.paymentDate).toLocaleDateString()}</div>
+                )}
+                {formData.paymentVerified && (
+                  <div className="text-green-600 font-medium">✓ Payment Verified</div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Documents Uploaded */}
         <Card>
           <CardHeader className="pb-3">
@@ -175,11 +243,11 @@ export default function ReviewStep() {
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Verification Documents */}
-            {formData.verificationDocument.length > 0 && (
+            {fileData.verificationDocument.length > 0 && (
               <div>
-                <div className="text-sm font-medium mb-2">Verification Documents ({formData.verificationDocument.length})</div>
+                <div className="text-sm font-medium mb-2">Verification Documents ({fileData.verificationDocument.length})</div>
                 <div className="grid grid-cols-2 gap-3">
-                  {formData.verificationDocument.map((file, index) => (
+                  {fileData.verificationDocument.map((file, index) => (
                     <div key={index} className="flex flex-col items-center p-2 bg-gray-50 rounded border">
                       {file.type.startsWith('image/') ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -204,11 +272,40 @@ export default function ReviewStep() {
             )}
 
             {/* Educational Documents */}
-            {formData.educationalDocuments.length > 0 && (
+            {fileData.educationalDocuments.length > 0 && (
               <div>
-                <div className="text-sm font-medium mb-2">Educational Documents ({formData.educationalDocuments.length})</div>
+                <div className="text-sm font-medium mb-2">Educational Documents ({fileData.educationalDocuments.length})</div>
                 <div className="grid grid-cols-2 gap-3">
-                  {formData.educationalDocuments.map((file, index) => (
+                  {fileData.educationalDocuments.map((file, index) => (
+                    <div key={index} className="flex flex-col items-center p-2 bg-gray-50 rounded border">
+                      {file.type.startsWith('image/') ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={URL.createObjectURL(file)}
+                          alt={file.name}
+                          className="w-full h-32 object-contain rounded border mb-2"
+                        />
+                      ) : (
+                        <div className="w-full h-32 flex items-center justify-center bg-gray-100 rounded border mb-2">
+                          <FileText className="h-8 w-8 text-gray-500" />
+                        </div>
+                      )}
+                      <div className="text-center w-full">
+                        <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
+                        <p className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* NYSC Documents */}
+            {fileData.nyscDocument.length > 0 && (
+              <div>
+                <div className="text-sm font-medium mb-2">NYSC Documents ({fileData.nyscDocument.length})</div>
+                <div className="grid grid-cols-2 gap-3">
+                  {fileData.nyscDocument.map((file, index) => (
                     <div key={index} className="flex flex-col items-center p-2 bg-gray-50 rounded border">
                       {file.type.startsWith('image/') ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -237,96 +334,35 @@ export default function ReviewStep() {
               <div>
                 <div className="text-sm font-medium mb-2">Other Qualifications ({formData.otherQualifications.length})</div>
                 {formData.otherQualifications.map((qualification, qualIndex) => (
-                  <div key={qualIndex} className="mb-4 p-2 bg-blue-50 rounded border">
+                  <div key={qualIndex} className="mb-4 p-3 bg-blue-50 rounded border">
                     <div className="text-sm font-medium text-blue-900 mb-2">{qualification.name}</div>
-                    <div className="grid grid-cols-2 gap-3">
-                      {qualification.documents.map((file, index) => (
-                        <div key={index} className="flex flex-col items-center p-2 bg-gray-50 rounded border">
-                          {file.type.startsWith('image/') ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={URL.createObjectURL(file)}
-                              alt={file.name}
-                              className="w-full h-32 object-contain rounded border mb-2"
-                            />
-                          ) : (
-                            <div className="w-full h-32 flex items-center justify-center bg-gray-100 rounded border mb-2">
-                              <FileText className="h-8 w-8 text-gray-500" />
+                    {qualification.documents.length > 0 && (
+                      <div className="grid grid-cols-2 gap-3">
+                        {qualification.documents.map((file, index) => (
+                          <div key={index} className="flex flex-col items-center p-2 bg-gray-50 rounded border">
+                            {file.type.startsWith('image/') ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={URL.createObjectURL(file)}
+                                alt={file.name}
+                                className="w-full h-32 object-contain rounded border mb-2"
+                              />
+                            ) : (
+                              <div className="w-full h-32 flex items-center justify-center bg-gray-100 rounded border mb-2">
+                                <FileText className="h-8 w-8 text-gray-500" />
+                              </div>
+                            )}
+                            <div className="text-center w-full">
+                              <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
+                              <p className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                             </div>
-                          )}
-                          <div className="text-center w-full">
-                            <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
-                            <p className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
-            )}
-
-            {/* NYSC Documents */}
-            {formData.nyscDocument.length > 0 && (
-              <div>
-                <div className="text-sm font-medium mb-2">NYSC Documents ({formData.nyscDocument.length})</div>
-                <div className="grid grid-cols-2 gap-3">
-                  {formData.nyscDocument.map((file, index) => (
-                    <div key={index} className="flex flex-col items-center p-2 bg-gray-50 rounded border">
-                      {file.type.startsWith('image/') ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt={file.name}
-                          className="w-full h-32 object-contain rounded border mb-2"
-                        />
-                      ) : (
-                        <div className="w-full h-32 flex items-center justify-center bg-gray-100 rounded border mb-2">
-                          <FileText className="h-8 w-8 text-gray-500" />
-                        </div>
-                      )}
-                      <div className="text-center w-full">
-                        <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
-                        <p className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {formData.verificationDocument.length === 0 && 
-             formData.educationalDocuments.length === 0 && 
-             formData.nyscDocument.length === 0 &&
-             formData.otherQualifications.length === 0 && (
-              <div className="text-sm text-gray-500">No documents uploaded yet</div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Payment Summary */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center space-x-2">
-              <CreditCard className="h-5 w-5" />
-              <span>Payment Summary</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            {formData.hasSocialRegistration === 'yes' ? (
-              <>
-                <div><strong>Payment Method:</strong> Social Registration Number</div>
-                <div><strong>Social Registration Number:</strong> {formData.socialRegistrationNumber}</div>
-                <div className="text-green-600 font-medium">No payment required</div>
-              </>
-            ) : (
-              <>
-                <div><strong>Application Fee:</strong> ₦5,000.00</div>
-                <div><strong>Payment Method:</strong> Multiple options available (Paystack, Flutterwave, LeadRemit)</div>
-                <div className="text-xs text-gray-500 mt-2">
-                  * Payment will be processed after form submission
-                </div>
-              </>
             )}
           </CardContent>
         </Card>

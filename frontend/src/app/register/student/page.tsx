@@ -6,18 +6,26 @@ import { Badge } from '@/components/ui/badge';
 import { useRegistrationStore } from '@/store/registration';
 import PersonalInfoStep from '@/components/registration/PersonalInfoStep';
 import AccountSecurityStep from '@/components/registration/AccountSecurityStep';
+import EducationStep from '@/components/registration/EducationStep';
+import NYSCStep from '@/components/registration/NYSCStep';
 import ProgramStep from '@/components/registration/ProgramStep';
+import ClassTimeStep from '@/components/registration/ClassTimeStep';
+import FinancialStep from '@/components/registration/FinancialStep';
 import PaymentStep from '@/components/registration/PaymentStep';
 import ReviewStep from '@/components/registration/ReviewStep';
 import PageLayout from '@/components/layout/PageLayout';
 import SavedProgressModal from '@/components/registration/SavedProgressModal';
-import { CheckCircle, User, Shield, BookOpen, CreditCard, Save, AlertCircle } from 'lucide-react';
+import { CheckCircle, User, Shield, School, Award, BookOpen, Clock, Briefcase, CreditCard, Save, AlertCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const steps = [
   'Personal Information',
   'Account Security',
+  'Educational Background',
+  'NYSC Information',
   'Program Selection',
+  'Class Schedule',
+  'Employment & Requirements',
   'Payment Information',
   'Review & Submit'
 ];
@@ -25,7 +33,11 @@ const steps = [
 const stepIcons = [
   User,
   Shield,
+  School,
+  Award,
   BookOpen,
+  Clock,
+  Briefcase,
   CreditCard,
   CheckCircle
 ];
@@ -66,10 +78,18 @@ export default function StudentRegistrationPage() {
       case 1:
         return <AccountSecurityStep />;
       case 2:
-        return <ProgramStep />;
+        return <EducationStep />;
       case 3:
-        return <PaymentStep />;
+        return <NYSCStep />;
       case 4:
+        return <ProgramStep />;
+      case 5:
+        return <ClassTimeStep />;
+      case 6:
+        return <FinancialStep />;
+      case 7:
+        return <PaymentStep />;
+      case 8:
         return <ReviewStep />;
       default:
         return <PersonalInfoStep />;

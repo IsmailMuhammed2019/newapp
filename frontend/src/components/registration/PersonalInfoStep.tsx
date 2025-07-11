@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { User, Shield, X, FileText, Image as ImageIcon } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const genderOptions = [
   { value: 'male', label: 'Male' },
@@ -28,15 +28,35 @@ const verificationModes = [
 ];
 
 export default function PersonalInfoStep() {
-  const { formData, setFormData } = useRegistrationStore();
+  const { formData, fileData, setFormData, setFileData } = useRegistrationStore();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // Restore preview URL when component mounts
+  useEffect(() => {
+    if (fileData.verificationDocument.length > 0) {
+      const file = fileData.verificationDocument[0];
+      if (file && file.type.startsWith('image/')) {
+        const url = URL.createObjectURL(file);
+        setPreviewUrl(url);
+      }
+    }
+  }, [fileData.verificationDocument]);
+
+  // Cleanup preview URL when component unmounts
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData({ [field]: value });
   };
 
-  const handleFileChange = (field: keyof typeof formData, files: File[]) => {
-    setFormData({ [field]: files });
+  const handleFileChange = (field: keyof typeof fileData, files: File[]) => {
+    setFileData({ [field]: files });
     
     // Create preview URL for image files
     if (files.length > 0) {
@@ -53,7 +73,7 @@ export default function PersonalInfoStep() {
   };
 
   const handleRemoveFile = () => {
-    setFormData({ verificationDocument: [] });
+    setFileData({ verificationDocument: [] });
     setPreviewUrl(null);
   };
 
@@ -237,7 +257,7 @@ export default function PersonalInfoStep() {
           </div>
 
           {/* File Preview Section */}
-          {formData.verificationDocument.length > 0 && (
+          {fileData.verificationDocument.length > 0 && (
             <div className="mt-4 p-4 bg-white border border-gray-200 rounded-lg">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="font-medium text-gray-900">Uploaded Document</h4>
@@ -281,15 +301,15 @@ export default function PersonalInfoStep() {
                       <FileText className="w-5 h-5 text-gray-500" />
                     )}
                     <span className="text-sm font-medium text-gray-900 truncate">
-                      {formData.verificationDocument[0]?.name}
+                      {fileData.verificationDocument[0]?.name}
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-xs text-gray-500">
                     <div>
-                      <span className="font-medium">Size:</span> {formatFileSize(formData.verificationDocument[0]?.size || 0)}
+                      <span className="font-medium">Size:</span> {formatFileSize(fileData.verificationDocument[0]?.size || 0)}
                     </div>
                     <div>
-                      <span className="font-medium">Type:</span> {formData.verificationDocument[0]?.type || 'Unknown'}
+                      <span className="font-medium">Type:</span> {fileData.verificationDocument[0]?.type || 'Unknown'}
                     </div>
                   </div>
                   <p className="text-xs text-green-600 font-medium mt-2">

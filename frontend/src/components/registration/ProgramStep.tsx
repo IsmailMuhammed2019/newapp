@@ -117,8 +117,8 @@ export default function ProgramStep() {
               <h4 className="font-medium text-green-900">Program Preference Summary</h4>
             </div>
             <div className="text-sm text-green-700 space-y-1">
-              <div><strong>Program:</strong> {programs.find(p => p.id === (formData.selectedProgram || 0))?.name || 'Not found'}</div>
-              <div><strong>Duration:</strong> {programs.find(p => p.id === (formData.selectedProgram || 0))?.duration_months || 'N/A'} months</div>
+              <div><strong>Program:</strong> {programs.find(p => p.id === parseInt(formData.selectedProgram))?.name || 'Not found'}</div>
+              <div><strong>Duration:</strong> {programs.find(p => p.id === parseInt(formData.selectedProgram))?.duration_months || 'N/A'} months</div>
             </div>
           </div>
         )}

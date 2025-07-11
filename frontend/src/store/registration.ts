@@ -39,6 +39,9 @@ export interface RegistrationFormData {
   // Program Selection
   selectedProgram: string;
   
+  // Class Schedule
+  classTimePreference: string;
+  
   // Financial Status
   employmentStatus: string;
   hasComputer: string;
@@ -47,6 +50,10 @@ export interface RegistrationFormData {
   // Payment
   hasSocialRegistration: string;
   socialRegistrationNumber: string;
+  paymentReference: string;
+  paymentStatus: string;
+  paymentVerified: boolean;
+  paymentDate: string;
   
   // System
   applicationId: string;
@@ -62,7 +69,18 @@ interface RegistrationStore {
   formData: RegistrationFormData;
   currentStep: number;
   hasSavedProgress: boolean;
+  // Separate state for File objects that don't get persisted
+  fileData: {
+    verificationDocument: File[];
+    educationalDocuments: File[];
+    nyscDocument: File[];
+    otherQualifications: Array<{
+      name: string;
+      documents: File[];
+    }>;
+  };
   setFormData: (data: Partial<RegistrationFormData>) => void;
+  setFileData: (data: Partial<RegistrationStore['fileData']>) => void;
   setCurrentStep: (step: number) => void;
   nextStep: () => void;
   prevStep: () => void;
@@ -95,11 +113,16 @@ const initialFormData: RegistrationFormData = {
   nyscNumber: '',
   nyscDocument: [],
   selectedProgram: '',
+  classTimePreference: '',
   employmentStatus: '',
   hasComputer: '',
   studyRequirements: [],
   hasSocialRegistration: '',
   socialRegistrationNumber: '',
+  paymentReference: '',
+  paymentStatus: '',
+  paymentVerified: false,
+  paymentDate: '',
   applicationId: `APP-${new Date().getFullYear()}-${Math.floor(Math.random() * 90000) + 10000}`,
   lastSaved: '',
 };
@@ -107,43 +130,10 @@ const initialFormData: RegistrationFormData = {
 // Custom storage that handles File objects
 const customStorage = {
   getItem: (name: string) => {
-    const item = localStorage.getItem(name);
-    if (!item) return null;
-    
-    try {
-      const parsed = JSON.parse(item);
-      // Convert File objects back to empty arrays since File objects can't be serialized
-      if (parsed.state?.formData) {
-        parsed.state.formData.verificationDocument = [];
-        parsed.state.formData.educationalDocuments = [];
-        parsed.state.formData.nyscDocument = [];
-        parsed.state.formData.otherQualifications = parsed.state.formData.otherQualifications.map((qual: { name: string; documents: File[] }) => ({
-          ...qual,
-          documents: []
-        }));
-      }
-      return item;
-    } catch {
-      return null;
-    }
+    return localStorage.getItem(name);
   },
   setItem: (name: string, value: string) => {
-    try {
-      const parsed = JSON.parse(value);
-      // Remove File objects before saving since they can't be serialized
-      if (parsed.state?.formData) {
-        parsed.state.formData.verificationDocument = [];
-        parsed.state.formData.educationalDocuments = [];
-        parsed.state.formData.nyscDocument = [];
-        parsed.state.formData.otherQualifications = parsed.state.formData.otherQualifications.map((qual: { name: string; documents: File[] }) => ({
-          ...qual,
-          documents: []
-        }));
-      }
-      localStorage.setItem(name, JSON.stringify(parsed));
-    } catch (error) {
-      console.error('Error saving to localStorage:', error);
-    }
+    localStorage.setItem(name, value);
   },
   removeItem: (name: string) => localStorage.removeItem(name),
 };
@@ -154,6 +144,13 @@ export const useRegistrationStore = create<RegistrationStore>()(
       formData: initialFormData,
       currentStep: 0,
       hasSavedProgress: false,
+      // Separate state for File objects that don't get persisted
+      fileData: {
+        verificationDocument: [],
+        educationalDocuments: [],
+        nyscDocument: [],
+        otherQualifications: [],
+      },
       
       setFormData: (data) => set((state) => ({
         formData: { 
@@ -163,10 +160,17 @@ export const useRegistrationStore = create<RegistrationStore>()(
         }
       })),
       
+      setFileData: (data) => set((state) => ({
+        fileData: {
+          ...state.fileData,
+          ...data,
+        }
+      })),
+      
       setCurrentStep: (step) => set({ currentStep: step }),
       
       nextStep: () => set((state) => ({
-        currentStep: Math.min(state.currentStep + 1, 4)
+        currentStep: Math.min(state.currentStep + 1, 8)
       })),
       
       prevStep: () => set((state) => ({
@@ -179,7 +183,13 @@ export const useRegistrationStore = create<RegistrationStore>()(
           applicationId: `APP-${new Date().getFullYear()}-${Math.floor(Math.random() * 90000) + 10000}`,
         },
         currentStep: 0,
-        hasSavedProgress: false
+        hasSavedProgress: false,
+        fileData: {
+          verificationDocument: [],
+          educationalDocuments: [],
+          nyscDocument: [],
+          otherQualifications: [],
+        }
       }),
       
       clearSavedProgress: () => {
@@ -190,7 +200,13 @@ export const useRegistrationStore = create<RegistrationStore>()(
             applicationId: `APP-${new Date().getFullYear()}-${Math.floor(Math.random() * 90000) + 10000}`,
           },
           currentStep: 0,
-          hasSavedProgress: false
+          hasSavedProgress: false,
+          fileData: {
+            verificationDocument: [],
+            educationalDocuments: [],
+            nyscDocument: [],
+            otherQualifications: [],
+          }
         });
       },
       
@@ -232,7 +248,13 @@ export const useRegistrationStore = create<RegistrationStore>()(
                   })) || []
                 },
                 currentStep: parsed.state.currentStep || 0,
-                hasSavedProgress: true
+                hasSavedProgress: true,
+                fileData: {
+                  verificationDocument: [],
+                  educationalDocuments: [],
+                  nyscDocument: [],
+                  otherQualifications: [],
+                }
               });
             }
           } catch (error) {

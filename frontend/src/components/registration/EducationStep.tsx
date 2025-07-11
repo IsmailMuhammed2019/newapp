@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { School, FileText, Plus, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 const educationLevels = [
   { value: 'secondary', label: 'Secondary School Certificate' },
@@ -29,14 +30,48 @@ const fieldOfStudyOptions = [
 ];
 
 export default function EducationStep() {
-  const { formData, setFormData } = useRegistrationStore();
+  const { formData, fileData, setFormData, setFileData } = useRegistrationStore();
+  const [educationalPreviewUrls, setEducationalPreviewUrls] = useState<string[]>([]);
+
+  // Restore preview URLs when component mounts
+  useEffect(() => {
+    if (fileData.educationalDocuments.length > 0) {
+      const urls = fileData.educationalDocuments.map(file => {
+        if (file.type.startsWith('image/')) {
+          return URL.createObjectURL(file);
+        }
+        return null;
+      }).filter((url): url is string => url !== null);
+      setEducationalPreviewUrls(urls);
+    }
+  }, [fileData.educationalDocuments]);
+
+  // Cleanup preview URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      educationalPreviewUrls.forEach(url => {
+        if (url) URL.revokeObjectURL(url);
+      });
+    };
+  }, [educationalPreviewUrls]);
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData({ [field]: value });
   };
 
-  const handleFileChange = (field: keyof typeof formData, files: File[]) => {
-    setFormData({ [field]: files });
+  const handleFileChange = (field: keyof typeof fileData, files: File[]) => {
+    setFileData({ [field]: files });
+    
+    // Create preview URLs for image files
+    if (field === 'educationalDocuments') {
+      const urls = files.map(file => {
+        if (file.type.startsWith('image/')) {
+          return URL.createObjectURL(file);
+        }
+        return null;
+      }).filter((url): url is string => url !== null);
+      setEducationalPreviewUrls(urls);
+    }
   };
 
   const addOtherQualification = () => {
@@ -58,6 +93,14 @@ export default function EducationStep() {
       [field]: value
     };
     setFormData({ otherQualifications: updatedQualifications });
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   return (
@@ -149,6 +192,50 @@ export default function EducationStep() {
         <p className="text-xs text-gray-500">Upload your certificates, transcripts, or other educational documents (multiple files allowed)</p>
       </div>
 
+      {/* Educational Documents Preview */}
+      {fileData.educationalDocuments.length > 0 && (
+        <div className="mt-4 p-4 bg-white border border-gray-200 rounded-lg">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="font-medium text-gray-900">Uploaded Educational Documents</h4>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setFileData({ educationalDocuments: [] });
+                setEducationalPreviewUrls([]);
+              }}
+              className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <X className="w-4 h-4 mr-1" />
+              Remove All
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {fileData.educationalDocuments.map((file, index) => (
+              <div key={index} className="flex flex-col items-center p-3 bg-gray-50 rounded-lg border">
+                {educationalPreviewUrls[index] ? (
+                  <img
+                    src={educationalPreviewUrls[index]!}
+                    alt={file.name}
+                    className="w-full h-32 object-contain rounded border mb-2"
+                  />
+                ) : (
+                  <div className="w-full h-32 flex items-center justify-center bg-gray-100 rounded border mb-2">
+                    <FileText className="w-8 h-8 text-gray-500" />
+                  </div>
+                )}
+                
+                <div className="text-center w-full">
+                  <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
+                  <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Other Qualifications Section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -213,6 +300,34 @@ export default function EducationStep() {
               />
               <p className="text-xs text-gray-500">Upload documents for this qualification (multiple files allowed)</p>
             </div>
+
+            {/* Qualification Documents Preview */}
+            {qualification.documents.length > 0 && (
+              <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                <div className="text-sm font-medium mb-2">Uploaded Documents ({qualification.documents.length})</div>
+                <div className="grid grid-cols-2 gap-3">
+                  {qualification.documents.map((file, fileIndex) => (
+                    <div key={fileIndex} className="flex flex-col items-center p-2 bg-white rounded border">
+                      {file.type.startsWith('image/') ? (
+                        <img
+                          src={URL.createObjectURL(file)}
+                          alt={file.name}
+                          className="w-full h-24 object-contain rounded border mb-1"
+                        />
+                      ) : (
+                        <div className="w-full h-24 flex items-center justify-center bg-gray-100 rounded border mb-1">
+                          <FileText className="w-6 h-6 text-gray-500" />
+                        </div>
+                      )}
+                      <div className="text-center w-full">
+                        <p className="text-xs font-medium text-gray-900 truncate">{file.name}</p>
+                        <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
