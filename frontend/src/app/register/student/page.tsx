@@ -89,7 +89,7 @@ export default function StudentRegistrationPage() {
                 <p className="text-gray-600 max-w-md mt-3 mx-auto">
                   Complete your comprehensive application to join our world-class training program. 
                   This multi-step process ensures we gather all necessary information to provide you 
-                  with the best learning experience and career opportunities
+                  with the best learning experience and career opportunities.
                 </p>
                 
                 {/* Save Indicator - Positioned absolutely */}
